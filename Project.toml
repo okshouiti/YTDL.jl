@@ -1,0 +1,13 @@
+name = "YTDL"
+uuid = "2df23b68-6b28-461d-9b73-c52b8c69034d"
+authors = ["okshouiti"]
+version = "0.1.0"
+
+[compat]
+julia = "1.3"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
