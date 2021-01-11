@@ -42,6 +42,11 @@ include("presets.jl")
 include("utils.jl")
 include("youtube-dl.jl")
 
+const USER_JL = joinpath(homedir(), ".julia", "config", "ytdl.jl")
+if isfile(USER_JL)
+    include(USER_JL)
+end
+
 
 
 # global setting
