@@ -33,33 +33,3 @@ function preset_limited_best(codecs; res_limit=4320)
         end
     end
 end
-
-# 1 accept up to V_144p, default is 9 (up to V_4320p)
-#=function preset_limited_best(codecs; limit=9)
-    list = (
-        V_4320p,
-        V_2160p,
-        V_1440p,
-        V_1080p,
-        V_720p,
-        V_480p,
-        V_360p,
-        V_240p,
-        V_144p
-    )[end-limit+1:end]
-    for ctuple ∈ list
-        cs = ∩(ctuple, codecs)
-        if isempty(cs)
-            continue
-        elseif length(cs) == 1
-            return first(cs)
-        elseif (codec(first(cs)) == "av1" &&
-            fps(cs[2]) == "30" &&
-            resolution(first(cs)) ∉ ("480", "360", "240", "144")
-        )
-            return cs[2]
-        else
-            return first(cs)
-        end
-    end
-end=#
