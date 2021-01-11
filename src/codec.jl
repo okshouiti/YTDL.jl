@@ -107,26 +107,33 @@ function sellect_format(cs, opts)
         a = preset_a_best(cs)
         v = preset_limited_best(cs)
     else
-        a,v = try_preset_func(p)
+        a,v = try_preset_func(p, cs)
     end
     return (a=a, v=v)
 end
 
 # call user-defined preset function
-function try_preset_func(preset)
-    f_name = Symbol(preset)
-    try
-        Expr(:call, f_name, cs) |> eval
-    catch
-        @error("Preset name 【$(preset)】 is invalid.")
-        println("用意されたプリセット ↓")
-        println(rpad("    best", 15) * ": best_audio + best_video")
-        println(rpad("    audio-best", 15) * ": best_audio\n")
-        println("または以下の要件を満たす関数を定義して下さい ↓")
-        println("    次の場所に定義  ~/.julia/config/ytdl.jl または startup.jl")
-        println("    コーデックidのタプルを返す  例 (251, 399)")
-        println("    呼び出しは ytdl(; preset=your_func_name) のように可能")
-        return nothing
+function try_preset_func(preset, cs)
+    func = Symbol(preset)
+    if isdefined(Main, func)
+        Expr(:call, func, cs) |> eval
+    else
+        return @error("""
+
+            Preset function 【$(preset)】 is not defined.
+            Call the predefined function below instead.
+                best      : best_audio + best_video
+                bestaudio : best_audio
+            Or, define your preset following the rules:
+                - Define in 
+                    ~/.julia/config/ytdl.jl
+                    or ~/.julia/config/startup.jl
+                - Return integer tuple (audio_id, video_id)
+                - Have valid name
+                    can include a-z, 0-9 and "_"
+                    not starts with numbers
+                    in lowercase
+        """)
     end
 end
 
