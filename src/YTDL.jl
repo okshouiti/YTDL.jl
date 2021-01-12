@@ -54,8 +54,8 @@ function ytdl(url::AbstractString; kwargs...)
     d = get(ENV, "YTDL_DIR", homedir())
     #opts = haskey(kwargs, :dir) ? kwargs.data : merge((;dir=d), kwargs)
     opts = get(kwargs, :dir, merge((;dir=d), kwargs))
-    isdir(opts.dir) || return @error("$(opts.dir) does not exist.")
-    HTTP.setuseragent!(nothing)
+    isdir(opts.dir) || return error("$(opts.dir) does not exist.")
+    get(opts, :useragent, nothing) |> HTTP.setuseragent!
     v_id = queries(url)["v"]
     ytdl_body(v_id, opts)
     return nothing
