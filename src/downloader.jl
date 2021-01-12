@@ -16,16 +16,20 @@ function downloader(audio, video::Video, path, metadata, opts)
     a_temp = string(path, "___audiotemp.", audio.temp_ext)
     dest = string(path, '.', video.ext)
     dl_file(audio, a_temp, opts)
-    use_temp = get(opts, :use_tempfile, true)
-    if use_temp
+    usetemp = get(opts, :use_tempfile, true)
+    if usetemp
         v_temp = string(path, "___videotemp.", video.temp_ext)
-        dl_file(video, v_temp, opts)
-        mux(a_temp, v_temp, dest, metadata, opts)
+        complete = dl_file(video, v_temp, opts)
+        if complete
+            mux(a_temp, v_temp, dest, metadata, opts)
+        end
         rm(v_temp)
     else
-        dl_file(video, dest, a_temp, metadata, opts)
+        complete = dl_file(video, dest, a_temp, metadata, opts)
+        complete || rm(dest)
     end
     rm(a_temp)
+    return nothing
 end
 
 
@@ -50,9 +54,6 @@ end
 # Video temporary file
 function dl_file(video::Video, dest, opts)
     ffpath, chunk_size = dl_options(opts)
-    #qs = get(opts, :queue_size, 10)
-    #io = `$ffpath -thread_queue_size $qs -i pipe:0 -c copy $dest`
-    #get_payload(video, io, chunk_size)
     get_payload(video, dest, chunk_size)
 end
 
@@ -71,7 +72,13 @@ function get_payload(av, io_target, chunk_size)
         start = 0
         stop = chunk - 1
         if iszero(av.length)
-            h = HTTP.head(av.url).headers |> Dict
+            h = try
+                resp = HTTP.head(av.url)
+                Dict(resp.headers)
+            catch e
+                printstyled("Target file not found. Status:$(e.status)\n", color=:red)
+                return false
+            end
             len = h["Content-Length"]
         else
             len = av.length
@@ -82,6 +89,7 @@ function get_payload(av, io_target, chunk_size)
             stop += chunk
         end
         chunked_payload(av.url, start, len, io)
+        return true
     end
 end
 
