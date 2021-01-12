@@ -114,20 +114,18 @@ end
 
 # call user-defined preset function
 function try_preset_func(preset, cs)
-    func = Symbol(preset)
-    if isdefined(Main, func)
-        Expr(:call, func, cs) |> eval
+    f = Symbol(preset)
+    if isdefined(@__MODULE__, f)
+        Expr(:call, f, cs) |> eval
     else
-        return @error("""
+        return error("""
 
             Preset function 【$(preset)】 is not defined.
             Call the predefined function below instead.
                 best      : best_audio + best_video
                 bestaudio : best_audio
             Or, define your preset following the rules:
-                - Define in 
-                    ~/.julia/config/ytdl.jl
-                    or ~/.julia/config/startup.jl
+                - Define in  ~/.julia/config/ytdl.jl
                 - Return integer tuple (audio_id, video_id)
                 - Have valid name
                     can include a-z, 0-9 and "_"
