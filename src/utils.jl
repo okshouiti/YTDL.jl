@@ -2,17 +2,6 @@
 # ==================    Utility    ===================
 # ====================================================
 
-# Global option Utils
-#=import Base.Iterators: Pairs
-
-function Base.merge(p::Pairs, nt::NamedTuple)
-    key = (p.itr..., keys(nt)...)
-    value = merge(p.data, nt)
-    return Pairs(value, key)
-end=#
-
-
-
 # FileSystem Utils
 const UNSAFE_CHARS = Dict(
     '/' => '／',
