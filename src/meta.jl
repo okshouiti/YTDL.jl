@@ -1,20 +1,19 @@
 """
     get_thumbnail(video_id, path)
 
-サムネイル画像に`title`と名前を付けて`dir`に保存。動画のURLではなくIDを指定。
+Save thumbnail image to path. Path must not include extension name (e.g. `"/home/user/filename"`).
 
-| id            | 解像度      | 黒帯 |
-|:--------------|:------------|:-----|
-| default       | 120x90      | あり |
-| mqdefault     | 320x180     |      |
-| hqdefault     | 480x360     | あり |
-| sddefault     | 640x480     | あり |
-| maxresdefault | 1280x720 ※ |      |
+| id            | resolution  |
+|:--------------|:------------|
+| default       | 120x90      |
+| mqdefault     | 320x180     |
+| hqdefault     | 480x360     |
+| sddefault     | 640x480     |
+| maxresdefault | 1280x720    |
 
 !!! note
-    解像度によってサムネイル画像の縦横比が変わる（16:9あるいは4:3）。
-
-    比率がオリジナルと異なる場合不足部分のピクセルは黒塗りされる。
+    Some resolutions are different from original one.
+    They have black border on Top-Bottom or Left-Right.
 """
 function get_thumbnail(v_id, path)
     res = (
