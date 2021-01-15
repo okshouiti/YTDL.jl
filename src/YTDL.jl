@@ -8,8 +8,8 @@ export ytdl, available_codecs
 abstract type AV end
 
 struct Audio <: AV
-	url::String
-	length::Int64
+    url::String
+    length::Int64
     ext::String
     temp_ext::String
     function Audio(nt, ext)
@@ -21,8 +21,8 @@ struct Audio <: AV
 end
 
 struct Video <: AV
-	url::String
-	length::Int64
+    url::String
+    length::Int64
     ext::String
     temp_ext::String
     function Video(nt, ext)
@@ -52,8 +52,7 @@ end
 # global setting
 function ytdl(url::AbstractString; kwargs...)
     d = get(ENV, "YTDL_DIR", homedir())
-    #opts = haskey(kwargs, :dir) ? kwargs.data : merge((;dir=d), kwargs)
-    opts = get(kwargs, :dir, merge((;dir=d), kwargs))
+    opts = haskey(kwargs, :dir) ? kwargs.data : merge((;dir=d), kwargs)
     isdir(opts.dir) || return error("$(opts.dir) does not exist.")
     get(opts, :useragent, nothing) |> HTTP.setuseragent!
     v_id = queries(url)["v"]
