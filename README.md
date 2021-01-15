@@ -3,12 +3,20 @@
 `youtube-dl`や`annie`のようなダウンローダをjuliaで書いてみたかったマン
 
 
+
 ## Installation
 ```julia
 (@v1.5) pkg> add https://github.com/okshouiti/YTDL.jl
 ```
 
+
+
 ## Usage
+いつもの
+```julia
+julia> using YTDL
+```
+
 ### Print available codecs
 ```julia
 julia> available_codecs(url)
@@ -42,4 +50,22 @@ julia> available_codecs(url)
 ```julia
 julia> ytdl(url, preset="best")
 Download start...
+```
+
+
+
+## Dependencies
+`ffmpeg`と任意で`youtube-dl`が必要なので入れておきましょう。
+
+```bash
+# Windows
+sudo scoop install ffmpeg
+
+# Ubuntu or Debian
+sudo apt install ffmpeg
+
+# Arch
+yay -S ffmpeg
+
+# etc...
 ```
