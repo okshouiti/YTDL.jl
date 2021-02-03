@@ -17,7 +17,7 @@ function youtube_dl(v_id, opts)
         "-o",
         joinpath(opts.dir, "%(title)s.%(ext)s"),
         "-f",
-        isnothing(c.v) ? c.a : c.v*"+"*c.a
+        isnothing(c.v) ? c.a : string(c.v, "+", c.a)
     )
     if isnothing(c.v)
         fmt = ("--extract-audio", "--audio-format", ext.a)
@@ -45,10 +45,9 @@ end
 
 function youtube_dl_available_codecs(url)
     lines = readlines(`youtube-dl -F $url`)
-    codec_strs = [
-        first(l, 3)
+    Int[
+        parse(Int, first(l, 3))
             for l ∈ lines
                 if isdigit(l[1]) && isdigit(l[3])
     ]
-    parse.(Int, codec_strs)
 end
