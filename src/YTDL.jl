@@ -79,8 +79,8 @@ function ytdl_body(v_id, opts)
     @async get_thumbnail(v_id, path)
     c = sellect_format(info.codecs, opts)
     ext = sellect_ext(c.a, c.v)
-	downloader(
-		Audio(info.codecs[c.a], ext),
+    downloader(
+        Audio(info.codecs[c.a], ext),
         Video(get(info.codecs, c.v, nothing), ext),
         path,
         info2cmd(info, v_id, opts),

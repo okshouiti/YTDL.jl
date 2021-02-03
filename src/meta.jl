@@ -60,7 +60,7 @@ function get_metadata(v_id)
     j = LazyJSON.value(response)
     haskey(j, "streamingData") || return nothing
     haskey(j["streamingData"], "adaptiveFormats") || return nothing
-	cs = Dict{Int,NamedTuple}()
+    cs = Dict{Int,NamedTuple}()
     for d ∈ j["streamingData"]["adaptiveFormats"]
         ps = Pair{Symbol,Any}[]
         if haskey(d, "contentLength")
@@ -82,7 +82,7 @@ function get_metadata(v_id)
         description = j["videoDetails"]["shortDescription"],
         length = j["videoDetails"]["lengthSeconds"],
         date = j["microformat"]["playerMicroformatRenderer"]["publishDate"],
-		codecs = cs
+        codecs = cs
     )
 end
 
