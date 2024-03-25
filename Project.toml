@@ -4,10 +4,13 @@ authors = ["okshouiti"]
 version = "0.1.0"
 
 [deps]
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Cascadia = "54eefc05-d75b-58de-a785-1a3403f0919f"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Gumbo = "708ec375-b3d6-5a57-a7ce-8257bf98657a"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-LazyJSON = "fc18253b-5e1b-504c-a4a2-9ece4944c004"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
+Underscores = "d9a01c3f-67ce-4d8c-9b55-35f6e4050bb1"
 
 [compat]
 julia = "1.5"

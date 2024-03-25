@@ -11,11 +11,11 @@ function youtube_dl(v_id, opts)
     u = "https://wwww.youtube.com/watch?v=" * v_id
     codecs = youtube_dl_available_codecs(u)
     c = sellect_format(codecs, opts)
-    ext = sellect_ext(c.a, c.v)
+    ext = sellect_ext(c.a, c.v, opts)
     base = (
         "youtube-dl",
         "-o",
-        joinpath(opts.dir, "%(title)s.%(ext)s"),
+        joinpath(opts[:dir], "%(title)s.%(ext)s"),
         "-f",
         isnothing(c.v) ? c.a : string(c.v, "+", c.a)
     )

@@ -1,8 +1,19 @@
 # ====================================================
-# ==================    Utility    ===================
+# =============    Keyword Arguments    ==============
 # ====================================================
 
-# FileSystem Utils
+# Embed thumbnail option
+function isembedthumb(opts)
+    bool = get(opts, :embed_thumbnail, true)
+    bool isa Bool ? bool : error("embed_thumbnail must be Bool")
+end
+
+
+
+# ====================================================
+# ====================    File    ====================
+# ====================================================
+
 const UNSAFE_CHARS = Dict(
     '/' => '／',
     '\\' => '＼',
@@ -39,13 +50,15 @@ end
 
 
 
-# URL Utils
+# ====================================================
+# ====================    HTTP    ====================
+# ====================================================
+
 # return dict of queries
 queries(url) = url |> HTTP.URI |> HTTP.queryparams
 
+overwrite_useragent!(opts) = get(opts, :useragent, nothing) |> HTTP.setuseragent!
 
-
-# HTTP Utils
 function print_global_useragent()
     url = "https://httpbin.org/user-agent"
     response = HTTP.get(url).body |> String
@@ -55,11 +68,14 @@ end
 
 
 
-# Print Utils
+# ====================================================
+# ===================    Print    ====================
+# ====================================================
+
 function available_codecs(url; color=true)
     HTTP.setuseragent!(nothing)
     v_id = queries(url)["v"]
-    metadata = get_metadata(v_id)
+    metadata = extract_info(v_id)
     if isnothing(metadata)
         return @error("""
 
@@ -68,32 +84,38 @@ function available_codecs(url; color=true)
         """)
     end
     codecs = metadata.codecs |> keys
-    df_a = DataFrame(ID=Int[], Codec=String[], Bitrate=Int[])
-    df_v = DataFrame(ID=Int[], Resolution=Int[], FPS=String[], Codec=String[])
+
+    matrix_audio = reshape(AbstractString[], 0, 3)
+    matrix_video = reshape(AbstractString[], 0, 4)
+    #df_a = DataFrame(ID=Int[], Codec=String[], Bitrate=Int[])
+    #df_v = DataFrame(ID=Int[], Resolution=Int[], FPS=String[], Codec=String[])
     for c ∈ codecs
         if isaudio(c)
-            push!(df_a, (c, name(c), bitrate(c)))
+            matrix_audio = vcat(matrix_audio, [c name(c) bitrate(c)])
         else
-            push!(df_v, (c, resolution(c), fps(c), name(c)))
+            matrix_video = vcat(matrix_video, [c resolution(c) fps(c) name(c)])
         end
     end
     # sorting table
-    sort!(df_a, [order(:Codec, rev=true), order(:Bitrate, rev=true)])
-    sort!(df_v, [order(:Resolution, rev=true), order(:FPS, rev=true), order(:Codec, rev=true)])
-    header_a = [
-        "ID" "Codec" "Bitrate";
-        "" "" "[Kbps]"
-    ]
-    header_v = [
-        "ID" "Resolution" "Framerate" "Codec";
-        "" "[pixels]" "[fps]" ""
-    ]
+    # TODO:
+    #sort!(df_a, [order(:Codec, rev=true), order(:Bitrate, rev=true)])
+    #sort!(df_v, [order(:Resolution, rev=true), order(:FPS, rev=true), order(:Codec, rev=true)])
+    header_a = (
+        ["ID", "Codec", "Bitrate"],
+        ["", "", "[Kbps]"],
+    )
+    header_v = (
+        ["ID", "Resolution", "Framerate", "Codec"],
+        ["", "[pixels]", "[fps]", ""],
+    )
     fmt = []
     if color
         push!(fmt, :header_crayon => crayon"green bold")
         #push!(fmt, :border_crayon => crayon"yellow")
         #push!(fmt, :highlighters => (hl_lt(2), hl_gt(4)))
     end
-    pretty_table(df_a, header_a; title="  Audio Codecs", fmt...)
-    pretty_table(df_v, header_v; title="  Video Codecs", fmt...)
+
+    @show 
+    pretty_table(matrix_audio; header=header_a, title="  Audio Codecs")
+    pretty_table(matrix_video; header=header_v, title="  Video Codecs")
 end

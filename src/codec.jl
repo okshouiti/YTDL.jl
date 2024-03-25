@@ -147,7 +147,7 @@ end
 sellect_ext(a) = a=="aac" ? "m4a" : "opus"
 
 # extension for audio codec
-function sellect_ext(a_id, v_id::Nothing)
+function sellect_ext(a_id, v_id::Nothing, opts)
     a = name(a_id)
     ext = sellect_ext(a)
     temp = sellect_temp(a)
@@ -155,29 +155,49 @@ function sellect_ext(a_id, v_id::Nothing)
 end
 
 # extension for audio and video codec
-function sellect_ext(a_id, v_id)
+function sellect_ext(a_id, v_id, opts)
     a = name(a_id)
     v = name(v_id)
     aext = sellect_ext(a)
-    if a=="aac" && (v=="av1" || v=="avc")
-        vext = "mp4"
-    elseif a=="opus" && v=="vp9"
-        vext = "webm"
-    else
+    if get(opts, :usemkv, false)
         vext = "mkv"
+    elseif get(opts, :usemp4, false)
+        vext = "mp4"
+    else
+        if a=="aac" && (v=="av1" || v=="avc")
+            vext = "mp4"
+        elseif a=="opus" && v=="vp9"
+            vext = "webm"
+        else
+            vext = "mkv"
+        end
     end
-    atemp = sellect_temp(a)
-    vtemp = sellect_temp(v)
-    (a=aext, v=vext, atemp=atemp, vtemp=atemp)
+    return (
+        a = aext,
+        v = vext,
+        atemp = sellect_temp(a),
+        vtemp = sellect_temp(v)
+    )
 end
 
 
 
-# 
+# extension sellection for tempfile
 function sellect_temp(c)
     if c=="opus" || c=="vp9"
         "webm"
     elseif c=="aac" || c=="av1" || c=="avc"
         "mp4"
+    end
+end
+
+
+
+# true if the format can contain .jpg thumbnail
+function isembeddable(ext)
+    if isnothing(ext.v)
+        ext.a == "m4a"
+    else
+        ext.v ∈ ("mp4", "mkv")
     end
 end

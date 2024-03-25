@@ -48,6 +48,11 @@ end
 # http://i3.ytimg.com
 # WEBP_URL_PATTERN   /vi_webp/OAOP2JUvxYw/maxresdefault.webp
 
+# download valid format thumbnail for embed
+get_embedthumb(v_id, path) = get_thumbnail(v_id, path)
+
+embedthumb_name(path) = path * "_embed"
+
 
 
 
@@ -55,6 +60,7 @@ end
 # ====================================================
 # ==================    MetaData    ==================
 # ====================================================
+
 function get_metadata(v_id)
     response = get_player_response(v_id)
     j = LazyJSON.value(response)
@@ -86,6 +92,8 @@ function get_metadata(v_id)
     )
 end
 
+
+
 function get_player_response(v_id)
     u = "https://www.youtube.com/get_video_info?video_id=" * v_id
     msg = HTTP.get(u).body |> String
@@ -94,23 +102,6 @@ function get_player_response(v_id)
         first |>
         x -> split(x, '=', limit=2) |>
         last
-    #io = IOBuffer(response)
-    #out = IOBuffer()
-    # searching player_response
-    #=while !eof(io)
-        c = read(io, Char)
-        if c == '&'
-            c_next1 = read(io, Char)
-            if c_next1 == 'p'
-                c_next2 = read(io, Char)
-                c_next2 == 'l' && break
-            end
-        end
-    end=#
-    # skip to response body
-    #=while !eof(io)
-        read(io, Char) == '=' && break
-    end=#
     unescape_uri(response)
 end
 
@@ -143,9 +134,12 @@ end=#
 
 
 
+
+
 # ====================================================
 # ===================    Cipher    ===================
 # ====================================================
+
 function iscipher(codecs_dict)
     keys(codecs_dict) |>
         first |>
@@ -162,31 +156,34 @@ end
 # ====================================================
 # =============    MetaData for FFMPEG    ============
 # ====================================================
+
 # convert metadata to FFMPEG format
-# 
-function info2cmd(info, v_id, opts)
+function info2ffcmd(info, v_id, opts)
     date = format_date(info.date, opts)
+    usecrlf = get(opts, :use_crlf, false)
+    desc = usecrlf ? replace(info.description, '\n'=>"\r\n") : info.desc
     d = Dict(
         "title" => info.title,
-        "comment" => info.description,
+        "comment" => desc,
         "date" => date,
-        "artist" => info.owner,
-        "publisher" => "https://www.youtube.com/channel/" * info.owner_id,
-        "purl" => "https://www.youtube.com/watch?v=" * v_id
+        "artist" => info.author,
+        "publisher" => "https://www.youtube.com/channel/" * info.author_id,
+        "purl" => VIDEO_PREFIX * v_id
         #"encoding_tool" => ""
     )
     cmd_arr = String[]
     for (k,v) ∈ d
-        push!(cmd_arr, "-metadata:g")
-        push!(cmd_arr, string(k, "=", v))
+        push!(cmd_arr, "-metadata:g", string(k, "=", v))
     end
     return cmd_arr
 end
 
+
+
 function format_date(date, opts)
     # youtube default delimiter
     default = '-'
-    haskey(opts, :date_format) || return replace(date, default=>'/')
+    haskey(opts, :date_format) || return date
     fmt = opts[:date_format] 
     if haskey(fmt, :delim)
         replace(date, default=>fmt[:delim])
@@ -204,6 +201,6 @@ function format_date(date, opts)
         end=#
         return date
     else
-        replace(date, default=>'/')
+        date
     end
 end

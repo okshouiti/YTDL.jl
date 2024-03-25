@@ -1,42 +1,19 @@
 module YTDL
 
-using HTTP, LazyJSON, PrettyTables, DataFrames
-export ytdl, available_codecs
+using Dates
+using HTTP, Gumbo, Cascadia, JSON3
+using Underscores, PrettyTables
+
+export ytdl, available_codecs, extract_info
 
 
+const VIDEO_PREFIX = "https://www.youtube.com/watch?v="
 
-abstract type AV end
-
-struct Audio <: AV
-    url::String
-    length::Int64
-    ext::String
-    temp_ext::String
-    function Audio(nt, ext)
-        # Int32 reach its ceiling at 2^31-1 (≒ 256 MiB)
-        # Int64 accepts up to 2^63-1 (≒ 1 EiB)
-        len = haskey(nt, :length) ? parse(Int64, nt.length) : 0
-        new(nt.url, len, ext.a, ext.atemp)
-    end
-end
-
-struct Video <: AV
-    url::String
-    length::Int64
-    ext::String
-    temp_ext::String
-    function Video(nt, ext)
-        len = haskey(nt, :length) ? parse(Int64, nt.length) : 0
-        new(nt.url, len, ext.v, ext.vtemp)
-    end
-    Video(t::Nothing, ext) = nothing
-end
-
-
-
+include("types.jl")
 include("codec.jl")
 include("deps.jl")
 include("meta.jl")
+include("extractor.jl")
 include("downloader.jl")
 include("presets.jl")
 include("utils.jl")
@@ -49,21 +26,47 @@ end
 
 
 
-# global setting
+"""
+    ytdl(url; kwargs...)
+
+| keyword         | Default     | Type               |
+|:----------------|:------------|:-------------------|
+| backend_options | see below   | Collection{String} |
+| chunk_size      | 10          | Int                |
+| dir             | homedir()   | String             |
+| embed_thumbnail | true        | Bool               |
+| enable_backend  | false       | Bool               |
+| ffmpeg_path     | "ffmpeg"    | String             |
+| preset          | "bestaudio" | String             |
+| queue_size      | 512         | Int                |
+| usemkv          | false       | Bool               |
+| usemp4          | false       | Bool               |
+| use_tempfile    | true        | Bool               |
+
+"""
 function ytdl(url::AbstractString; kwargs...)
-    d = get(ENV, "YTDL_DIR", homedir())
-    opts = haskey(kwargs, :dir) ? kwargs.data : merge((;dir=d), kwargs)
+    # global immutable options (named tuple)
+    if haskey(kwargs, :dir)
+        opts = kwargs.data
+    else
+        d = get(ENV, "YTDL_DIR", homedir())
+        opts = merge((; dir=d), kwargs)
+    end
     isdir(opts.dir) || return error("$(opts.dir) does not exist.")
-    get(opts, :useragent, nothing) |> HTTP.setuseragent!
+    overwrite_useragent!(opts)
     v_id = queries(url)["v"]
     ytdl_body(v_id, opts)
     return nothing
 end
 
+
+
 # download setting each video
 function ytdl_body(v_id, opts)
-    info = get_metadata(v_id)
-    if isnothing(info)
+    opts = Dict{Symbol,Any}(pairs(opts))   # make keyword arguments mutable
+    info = extract_info(v_id)
+    # -----  Backend-Mode -----
+    if isempty(info.codecs)
         if get(opts, :enable_backend, false)
             return youtube_dl(v_id, opts)
         else
@@ -75,17 +78,22 @@ function ytdl_body(v_id, opts)
             return nothing
         end
     end
-    path = joinpath(opts.dir, safename(info.title, opts))
+    path = joinpath(opts[:dir], safename(info.title, opts))
+    # -----  Thumbnail -----
     @async get_thumbnail(v_id, path)
+    # -----  Codec and Extension -----
     c = sellect_format(info.codecs, opts)
-    ext = sellect_ext(c.a, c.v)
-    downloader(
-        Audio(info.codecs[c.a], ext),
-        Video(get(info.codecs, c.v, nothing), ext),
-        path,
-        info2cmd(info, v_id, opts),
-        opts
-    )
+    ext = sellect_ext(c.a, c.v, opts)
+    if !isembeddable(ext)
+        fmt = isnothing(ext.v) ? ext.a : ext.v
+        @warn("$fmt doesn't support embedding thumbnail.")
+        opts[:embed_thumbnail] = false
+    end
+    # ----- instance of AV -----
+    audio = Audio(info.codecs[c.a], ext)
+    video = isnothing(c.v) ? nothing : Video(info.codecs[c.v], ext)
+    ffcmd = info2ffcmd(info, v_id, opts)
+    downloader(audio, video, v_id, path, ffcmd, opts)
 end
 
 
